@@ -1,6 +1,7 @@
 """Step definitions that exercise the product catalog through its HTTP UI/API."""
 import requests
 from behave import then, when
+from selenium.webdriver.common.by import By
 
 
 def endpoint(context, suffix=""):
@@ -74,3 +75,27 @@ def list_lacks(context, name):
 def count_products(context, count):
     assert context.response.status_code == 200
     assert len(context.response.json()) == count
+
+
+@when('I press the "{button}" button')
+def press_button(context, button):
+    """Click a named control in the administrative UI."""
+    context.driver.find_element(By.ID, f"{button.lower()}-btn").click()
+
+
+@then('I should see "{text}"')
+def text_is_present(context, text):
+    """Verify visible page text is present."""
+    assert text in context.driver.find_element(By.TAG_NAME, "body").text
+
+
+@then('I should not see "{text}"')
+def text_is_not_present(context, text):
+    """Verify visible page text is absent."""
+    assert text not in context.driver.find_element(By.TAG_NAME, "body").text
+
+
+@then('I should see the "{image}" image')
+def image_is_present(context, image):
+    """Verify an image with the supplied alternative text is displayed."""
+    assert context.driver.find_element(By.CSS_SELECTOR, f'img[alt="{image}"]').is_displayed()
