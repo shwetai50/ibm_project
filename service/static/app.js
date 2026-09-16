@@ -1,0 +1,13 @@
+const $ = (id) => document.getElementById(`product_${id}`);
+const fields = ["id", "name", "description", "price", "available", "category"];
+const message = (text, bad = false) => { const node = document.getElementById("flash"); node.textContent = text; node.style.color = bad ? "#a00" : "#075a2b"; };
+const clear = () => { fields.forEach((field) => { $(field).value = field === "available" ? "True" : field === "category" ? "Unknown" : ""; }); };
+const payload = () => ({ name: $("name").value, description: $("description").value, price: $("price").value, available: $("available").value === "True", category: $("category").value.toUpperCase() });
+const fill = (product) => fields.forEach((field) => { $(field).value = field === "available" ? String(product[field]) : field === "category" ? product[field][0] + product[field].slice(1).toLowerCase() : product[field] ?? ""; });
+async function request(url, options = {}) { const response = await fetch(url, options); const data = response.status === 204 ? null : await response.json(); if (!response.ok) throw new Error(data.error || "Request failed"); return data; }
+async function save(method) { try { const id = $("id").value; const product = await request(method === "POST" ? "/products" : `/products/${id}`, {method, headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload())}); fill(product); message("Success"); await search(); } catch (error) { message(error.message, true); } }
+async function retrieve() { try { fill(await request(`/products/${$("id").value}`)); message("Success"); } catch (error) { message(error.message, true); } }
+async function remove() { try { await request(`/products/${$("id").value}`, {method:"DELETE"}); clear(); message("Success"); await search(); } catch (error) { message(error.message, true); } }
+async function search() { try { const params = new URLSearchParams(); if ($("name").value) params.set("name", $("name").value); const products = await request(`/products?${params}`); document.getElementById("results").innerHTML = products.map(p => `<tr><td>${p.id}</td><td>${p.name}</td><td>${p.category}</td><td>${p.available}</td><td>${p.price}</td></tr>`).join(""); } catch (error) { message(error.message, true); } }
+document.getElementById("create-btn").onclick = () => save("POST"); document.getElementById("retrieve-btn").onclick = retrieve; document.getElementById("update-btn").onclick = () => save("PUT"); document.getElementById("delete-btn").onclick = remove; document.getElementById("clear-btn").onclick = clear; document.getElementById("search-btn").onclick = search;
+clear(); search();
